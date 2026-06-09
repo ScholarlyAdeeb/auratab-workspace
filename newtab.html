@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraTab Workspace</title>
+  <meta name="description" content="A premium, ultra-minimalist focus dashboard Chrome extension designed to replace the standard new tab page.">
+  
+  <!-- Google Fonts for Modern Styling -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-base: #030407;
+      --glow-color: rgba(99, 102, 241, 0.14); /* Luxury indigo cursor tracking glow */
+      --glow-ambient: #0c1020;
+      --accent-color: #6366f1; /* Electric indigo active indicator */
+      --text-primary: #f3f4f6;
+      --text-muted: #9ca3af;
+      --grid-line-color: rgba(255, 255, 255, 0.007);
+      
+      --card-bg: rgba(255, 255, 255, 0.015);
+      --card-border: rgba(255, 255, 255, 0.04);
+      --sidebar-bg: rgba(3, 4, 7, 0.45);
+      --sidebar-border: rgba(255, 255, 255, 0.06);
+      --modal-bg: rgba(12, 16, 32, 0.8);
+      --input-bg: rgba(3, 4, 7, 0.6);
+      --input-border: rgba(255, 255, 255, 0.08);
+
+      --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --mouse-x: 50%;
+      --mouse-y: 50%;
+    }
+
+    /* Premium Light Mode Overrides */
+    body.light-mode {
+      --bg-base: #F8FAFC;
+      --text-primary: #0f172a;
+      --text-muted: #64748b;
+      --grid-line-color: rgba(15, 23, 42, 0.015);
+      
+      --card-bg: rgba(15, 23, 42, 0.03);
+      --card-border: rgba(15, 23, 42, 0.08);
+      --sidebar-bg: rgba(248, 250, 252, 0.65);
+      --sidebar-border: rgba(15, 23, 42, 0.08);
+      --modal-bg: rgba(255, 255, 255, 0.9);
+      --input-bg: rgba(255, 255, 255, 0.8);
+      --input-border: rgba(15, 23, 42, 0.12);
+    }
+
+    /* Dark Mode Theme Variables */
+    body.theme-deep-cosmic {
+      --glow-color: rgba(99, 102, 241, 0.14);
+      --glow-ambient: #0c1020;
+      --accent-color: #6366f1;
+    }
+    body.theme-matrix-neon {
+      --glow-color: rgba(16, 185, 129, 0.14);
+      --glow-ambient: #061c14;
+      --accent-color: #10b981;
+    }
+    body.theme-sunset-crimson {
+      --glow-color: rgba(239, 68, 68, 0.14);
+      --glow-ambient: #200c0c;
+      --accent-color: #ef4444;
+    }
+    body.theme-slate-studio {
+      --glow-color: rgba(148, 163, 184, 0.12);
+      --glow-ambient: #0f172a;
+      --accent-color: #64748b;
+    }
+
+    /* Light Mode Theme Variables Overrides */
+    body.light-mode.theme-deep-cosmic {
+      --glow-color: rgba(99, 102, 241, 0.08);
+      --glow-ambient: #eef2ff;
+      --accent-color: #4f46e5;
+    }
+    body.light-mode.theme-matrix-neon {
+      --glow-color: rgba(16, 185, 129, 0.08);
+      --glow-ambient: #ecfdf5;
+      --accent-color: #059669;
+    }
+    body.light-mode.theme-sunset-crimson {
+      --glow-color: rgba(239, 68, 68, 0.08);
+      --glow-ambient: #fef2f2;
+      --accent-color: #dc2626;
+    }
+    body.light-mode.theme-slate-studio {
+      --glow-color: rgba(148, 163, 184, 0.08);
+      --glow-ambient: #f1f5f9;
+      --accent-color: #475569;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      background-color: var(--bg-base);
+      /* Base gradients + cursor tracking glow */
+      background-image: 
+        radial-gradient(circle at var(--mouse-x) var(--mouse-y), var(--glow-color) 0%, transparent 55%),
+        radial-gradient(circle at 50% 50%, var(--glow-ambient) 0%, var(--bg-base) 100%);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      padding-right: 368px; /* Offset to keep central layout centered in remaining space */
+      overflow: hidden;
+      position: relative;
+      transition: padding-right 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.5s ease, background-image 0.5s ease, color 0.5s ease;
+    }
+
+    /* Interactive Mesh Grid Overlay linked to Mouse coordinates */
+    .bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(var(--grid-line-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px);
+      background-size: 45px 45px;
+      background-position: center center;
+      mask-image: radial-gradient(circle at var(--mouse-x) var(--mouse-y), black 25%, transparent 75%);
+      -webkit-mask-image: radial-gradient(circle at var(--mouse-x) var(--mouse-y), black 25%, transparent 75%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Ambient pulse lighting circles */
+    .ambient-glow-circle {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+      filter: blur(50px);
+      pointer-events: none;
+      z-index: 0;
+      animation: float-glow 22s infinite ease-in-out alternate;
+      transition: background 0.4s ease;
+    }
+    .glow-left {
+      top: -100px;
+      left: -100px;
+    }
+    .glow-right {
+      bottom: -100px;
+      right: -100px;
+      animation-delay: -11s;
+    }
+
+    @keyframes float-glow {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+      100% {
+        transform: translate(60px, 40px) scale(1.15);
+      }
+    }
+
+    /* Spatial Theme Control Panel (Top Corner) */
+    .theme-control-panel {
+      position: absolute;
+      top: 1.5rem;
+      left: 1.5rem;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.5rem 0.75rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 50px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+    }
+    body.light-mode .theme-control-panel {
+      background: rgba(15, 23, 42, 0.03);
+      border-color: rgba(15, 23, 42, 0.08);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+    .control-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 50%;
+      transition: color 0.2s ease, transform 0.2s ease;
+    }
+    .control-btn:hover {
+      color: var(--text-primary);
+      transform: scale(1.1);
+    }
+    .gradient-matrix {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      padding-left: 0.6rem;
+    }
+    body.light-mode .gradient-matrix {
+      border-left-color: rgba(15, 23, 42, 0.1);
+    }
+    .matrix-btn {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .matrix-btn:hover {
+      transform: scale(1.25);
+    }
+    .matrix-btn.active {
+      border-color: #ffffff;
+      box-shadow: 0 0 8px var(--accent-color);
+      transform: scale(1.15);
+    }
+    body.light-mode .matrix-btn.active {
+      border-color: #0f172a;
+    }
+
+    /* Main Dashboard Layout Container */
+    .dashboard-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      z-index: 2;
+      animation: cardEntrance 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      will-change: transform, opacity;
+      padding: 2.5rem;
+      max-width: 800px;
+      width: 90%;
+    }
+
+    @keyframes cardEntrance {
+      from {
+        opacity: 0;
+        transform: translateY(25px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Header text formatting (Constrained to single, non-breaking line) */
+    .greeting-container {
+      margin-bottom: 2.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      max-width: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+    
+    #dashboard-greeting {
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, var(--text-primary) 40%, var(--accent-color) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      margin: 0;
+    }
+
+    /* Subtle online indicator dot */
+    .greeting-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background-color: var(--accent-color);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-color), 0 0 20px rgba(99, 102, 241, 0.4);
+      animation: dot-pulse 2s infinite ease-in-out;
+      flex-shrink: 0;
+    }
+
+    @keyframes dot-pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.8;
+      }
+      50% {
+        transform: scale(1.25);
+        opacity: 1;
+      }
+    }
+
+    /* Subtitle box (motivational engine thoughts) */
+    .subtitle-box {
+      width: 100%;
+      min-height: 60px;
+      max-width: 720px;
+      padding: 1.25rem 2rem;
+      margin-bottom: 2.5rem;
+      background: rgba(3, 4, 7, 0.45);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      font-style: italic;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: border-color 0.3s ease, transform 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+    }
+    .subtitle-box:hover {
+      border-color: rgba(99, 102, 241, 0.35);
+      transform: translateY(-1px);
+    }
+    body.light-mode .subtitle-box {
+      background: rgba(15, 23, 42, 0.03);
+      border-color: rgba(15, 23, 42, 0.08);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+      color: #334155;
+    }
+
+    /* Shortcuts navigation capsules grid */
+    .shortcuts-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.25rem;
+      z-index: 10;
+      flex-wrap: wrap;
+      max-width: 720px;
+    }
+    .shortcut-capsule {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.7rem 1.5rem;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 
+        0 4px 30px rgba(0, 0, 0, 0.15), 
+        inset 0 1px 1px rgba(255, 255, 255, 0.04);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      letter-spacing: -0.01em;
+      position: relative;
+    }
+    body.light-mode .shortcut-capsule {
+      background: rgba(15, 23, 42, 0.03);
+      border-color: rgba(15, 23, 42, 0.06);
+      color: #334155;
+      box-shadow: 
+        0 4px 30px rgba(0, 0, 0, 0.02), 
+        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+    }
+    .shortcut-capsule:hover {
+      background: rgba(99, 102, 241, 0.09);
+      border-color: rgba(99, 102, 241, 0.35);
+      color: var(--accent-color);
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 
+        0 8px 30px rgba(99, 102, 241, 0.12), 
+        0 0 1px rgba(99, 102, 241, 0.3);
+    }
+    body.light-mode .shortcut-capsule:hover {
+      background: rgba(99, 102, 241, 0.08);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: var(--accent-color);
+    }
+    .shortcut-icon {
+      opacity: 0.65;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .shortcut-capsule:hover .shortcut-icon {
+      opacity: 1;
+      transform: scale(1.08);
+    }
+
+    /* Close button on custom shortcuts */
+    .shortcut-delete {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #ef4444;
+      color: #ffffff;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .shortcut-capsule:hover .shortcut-delete {
+      opacity: 1;
+    }
+
+    /* Add custom shortcut trigger button */
+    .add-shortcut-btn {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .add-shortcut-btn:hover {
+      border-style: solid;
+      background: rgba(99, 102, 241, 0.07);
+      border-color: rgba(99, 102, 241, 0.3);
+      color: #ffffff;
+    }
+
+    /* Tracks Sidebar (Right Aligned, Premium Smoked Glass Floating Sidebar) */
+    .tracks-sidebar {
+      position: absolute;
+      right: 1.5rem;
+      top: 1.5rem;
+      bottom: 1.5rem;
+      width: 320px;
+      background: var(--sidebar-bg);
+      border: 1px solid var(--sidebar-border);
+      border-radius: 16px;
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      padding: 2.25rem 1.5rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease, border-color 0.4s ease;
+    }
+    body.light-mode .tracks-sidebar {
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    }
+    
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .sidebar-header h2 {
+      font-size: 1.3rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+    
+    .add-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .add-btn:hover {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: var(--accent-color);
+      transform: scale(1.08);
+    }
+    body.light-mode .add-btn {
+      background: rgba(15, 23, 42, 0.03);
+      border-color: rgba(15, 23, 42, 0.08);
+    }
+    
+    input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      padding: 0.6rem 0.9rem;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.88rem;
+      transition: all 0.3s ease;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.15);
+    }
+    
+    /* Scrollable Tracks List */
+    .tracks-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      padding-right: 0.25rem;
+    }
+    
+    .tracks-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .tracks-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .tracks-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+    .tracks-list::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.3);
+    }
+    
+    /* Track Card (Glassmorphic) */
+    .track-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 0.95rem 1.1rem;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 1rem;
+    }
+    .track-card:hover {
+      background: rgba(255, 255, 255, 0.035);
+      border-color: rgba(99, 102, 241, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    body.light-mode .track-card:hover {
+      background: rgba(15, 23, 42, 0.04);
+      border-color: rgba(99, 102, 241, 0.30);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+    .track-card.active {
+      background: rgba(99, 102, 241, 0.05);
+      border-color: rgba(99, 102, 241, 0.35);
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08);
+    }
+    body.light-mode .track-card.active {
+      background: rgba(99, 102, 241, 0.06);
+      border-color: rgba(99, 102, 241, 0.45);
+    }
+
+    .track-title-link {
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      text-decoration: none;
+      border-bottom: 1px dashed transparent;
+      transition: color 0.2s ease, border-color 0.2s ease;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+      max-width: 140px;
+    }
+    .track-title-link:hover {
+      color: var(--accent-color) !important;
+      border-bottom-color: var(--accent-color);
+    }
+    
+    .track-delete-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.2s ease;
+      padding: 2px;
+      margin-top: -2px;
+    }
+    body.light-mode .track-delete-btn {
+      color: rgba(15, 23, 42, 0.2);
+    }
+    .track-card:hover .track-delete-btn {
+      opacity: 1;
+    }
+    .track-delete-btn:hover {
+      color: #ef4444 !important;
+      transform: scale(1.15);
+    }
+    
+    .track-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    
+    /* Sidebar Toggle for Small Screens */
+    .sidebar-toggle {
+      display: none;
+      position: absolute;
+      right: 1.5rem;
+      top: 1.5rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+    body.light-mode .sidebar-toggle {
+      background: rgba(15, 23, 42, 0.02);
+      border-color: rgba(15, 23, 42, 0.08);
+    }
+    .sidebar-toggle:hover {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.35);
+    }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 4, 7, 0.75);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 1;
+      transition: opacity 0.25s ease-out;
+    }
+    body.light-mode .modal-backdrop {
+      background: rgba(248, 250, 252, 0.55);
+    }
+    
+    .modal-content {
+      background: var(--modal-bg);
+      border: 1px solid var(--sidebar-border);
+      border-radius: 16px;
+      padding: 2.25rem;
+      width: 400px;
+      max-width: 90%;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      transform: scale(0.95);
+      animation: modalEntrance 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      color: var(--text-primary);
+      transition: background-color 0.4s ease, border-color 0.4s ease;
+    }
+    body.light-mode .modal-content {
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+    }
+    
+    @keyframes modalEntrance {
+      to {
+        transform: scale(1);
+      }
+    }
+    
+    .modal-content h3 {
+      font-size: 1.3rem;
+      margin-bottom: 1.25rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+    
+    .modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+    
+    .modal-btn {
+      padding: 0.55rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 0.2s ease;
+      border: none;
+    }
+    
+    .modal-btn.cancel {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+    body.light-mode .modal-btn.cancel {
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+    .modal-btn.cancel:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+    }
+    body.light-mode .modal-btn.cancel:hover {
+      background: rgba(15, 23, 42, 0.04);
+    }
+    .modal-btn.save {
+      background: var(--accent-color);
+      color: #ffffff;
+    }
+    .modal-btn.save:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    /* Command Palette CSS */
+    .command-palette-content {
+      background: rgba(10, 12, 18, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 1.5rem;
+      width: 500px;
+      max-width: 90%;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      transform: scale(0.95);
+      animation: modalEntrance 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      transition: background-color 0.4s ease, border-color 0.4s ease;
+    }
+    body.light-mode .command-palette-content {
+      background: rgba(248, 250, 252, 0.9);
+      border-color: rgba(15, 23, 42, 0.08);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.1);
+    }
+    #command-palette-input {
+      width: 100%;
+      background: rgba(3, 4, 7, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 0.8rem 1.1rem;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    body.light-mode #command-palette-input {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: rgba(15, 23, 42, 0.12);
+    }
+    #command-palette-input:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+    }
+    .command-palette-results {
+      max-height: 280px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      padding-right: 0.25rem;
+    }
+    .command-palette-results::-webkit-scrollbar {
+      width: 4px;
+    }
+    .command-palette-results::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .command-palette-results::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+    .command-palette-results::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.3);
+    }
+    .command-palette-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      background: transparent;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      color: var(--text-primary);
+    }
+    .command-palette-item.active {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.25);
+    }
+    body.light-mode .command-palette-item.active {
+      background: rgba(99, 102, 241, 0.08);
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+    .command-palette-item .item-title {
+      font-size: 0.92rem;
+      font-weight: 500;
+    }
+    .command-palette-item .item-type {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-color);
+      background: rgba(99, 102, 241, 0.1);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+    }
+
+    /* Zen Mode Overlay CSS */
+    #zen-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: #030407;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #zen-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    #zen-clock {
+      font-family: var(--font-mono);
+      font-size: clamp(6rem, 18vw, 14rem);
+      font-weight: 700;
+      color: rgba(243, 244, 246, 0.08); /* micro-dimmed */
+      letter-spacing: -0.05em;
+      user-select: none;
+      animation: clock-breath 6s infinite ease-in-out alternate;
+    }
+    @keyframes clock-breath {
+      0% {
+        transform: scale(0.98);
+        color: rgba(243, 244, 246, 0.06);
+      }
+      100% {
+        transform: scale(1.02);
+        color: rgba(243, 244, 246, 0.11);
+      }
+    }
+
+    /* Transition layout during active Zen Mode */
+    .theme-control-panel,
+    .sidebar-toggle,
+    .dashboard-card,
+    .tracks-sidebar,
+    .bg-grid,
+    .ambient-glow-circle {
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease, border-color 0.4s ease;
+    }
+
+    body.zen-active .theme-control-panel,
+    body.zen-active .sidebar-toggle,
+    body.zen-active .dashboard-card,
+    body.zen-active .tracks-sidebar,
+    body.zen-active .bg-grid,
+    body.zen-active .ambient-glow-circle {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    .hidden {
+      display: none !important;
+    }
+
+    /* Screen sizing rules */
+    @media (max-width: 1024px) {
+      body {
+        padding-right: 0;
+      }
+      .sidebar-toggle {
+        display: flex;
+      }
+      .tracks-sidebar {
+        right: 0;
+        top: 0;
+        bottom: 0;
+        height: 100%;
+        border-radius: 0;
+        border: none;
+        border-left: 1px solid rgba(255, 255, 255, 0.04);
+        transform: translateX(100%);
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+      }
+      .tracks-sidebar.open {
+        transform: translateX(0);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mesh grid and glow details -->
+  <div class="bg-grid"></div>
+  <div class="ambient-glow-circle glow-left"></div>
+  <div class="ambient-glow-circle glow-right"></div>
+
+  <!-- Space Matrix Controls (Top Left Corner) -->
+  <div class="theme-control-panel">
+    <button id="theme-toggle" class="control-btn" title="Toggle Light/Dark Mode">
+      <svg class="sun-icon hidden" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg class="moon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <div class="gradient-matrix">
+      <button class="matrix-btn active" data-theme="theme-deep-cosmic" title="Deep Cosmic" style="background: linear-gradient(135deg, #6366f1, #3b82f6);"></button>
+      <button class="matrix-btn" data-theme="theme-matrix-neon" title="Matrix Neon" style="background: linear-gradient(135deg, #10b981, #047857);"></button>
+      <button class="matrix-btn" data-theme="theme-sunset-crimson" title="Sunset Crimson" style="background: linear-gradient(135deg, #ef4444, #8b5cf6);"></button>
+      <button class="matrix-btn" data-theme="theme-slate-studio" title="Slate Studio" style="background: linear-gradient(135deg, #94a3b8, #475569);"></button>
+    </div>
+  </div>
+
+  <!-- Sidebar Toggle on Mobile -->
+  <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle Tracks Sidebar">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </button>
+
+  <!-- Centered Focus Panel (Refactored Spatial Grid) -->
+  <main class="dashboard-card">
+    <header class="greeting-container">
+      <h1 id="dashboard-greeting">What's the project move?</h1>
+      <span class="greeting-dot"></span>
+    </header>
+
+    <!-- Motivational Thought Box -->
+    <section class="subtitle-box" id="quote-box" aria-live="polite">
+      Loading daily thoughts...
+    </section>
+
+    <!-- Navigation Capsules Grid -->
+    <nav class="shortcuts-container" id="shortcuts-grid" aria-label="Quick links">
+      <!-- Generated dynamically (with defaults + customs) -->
+    </nav>
+  </main>
+
+  <!-- Right Tracks Sidebar Panel -->
+  <aside id="tracks-sidebar" class="tracks-sidebar">
+    <div class="sidebar-header">
+      <h2>Tracks</h2>
+      <button id="add-track-btn" class="add-btn" title="Add Track">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Tracks List Container -->
+    <div id="tracks-list" class="tracks-list">
+      <!-- Generated dynamically -->
+    </div>
+  </aside>
+
+  <!-- Add Track Modal Overlay -->
+  <div id="track-modal" class="modal-backdrop hidden">
+    <div class="modal-content">
+      <h3>Add Playlist Track</h3>
+      <div class="modal-body">
+        <input type="text" id="track-name-input" placeholder="Playlist Title Name (e.g. System Design)" />
+        <input type="text" id="track-url-input" placeholder="YouTube Playlist Link or URL" />
+        <div id="track-total-input-container" class="hidden">
+          <input type="number" id="track-total-input" placeholder="Total videos/tasks" min="1" />
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button id="track-cancel-btn" class="modal-btn cancel">Cancel</button>
+        <button id="track-save-btn" class="modal-btn save">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Custom Shortcut Modal -->
+  <div id="shortcut-modal" class="modal-backdrop hidden">
+    <div class="modal-content">
+      <h3>Add Custom Shortcut</h3>
+      <div class="modal-body">
+        <input type="text" id="shortcut-name-input" placeholder="Shortcut Name (e.g. Gmail)" />
+        <input type="text" id="shortcut-url-input" placeholder="Target URL (e.g. https://mail.google.com)" />
+      </div>
+      <div class="modal-buttons">
+        <button id="shortcut-cancel-btn" class="modal-btn cancel">Cancel</button>
+        <button id="shortcut-save-btn" class="modal-btn save">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Command Palette Modal -->
+  <div id="command-palette-modal" class="modal-backdrop hidden">
+    <div class="command-palette-content">
+      <input type="text" id="command-palette-input" placeholder="Type a command or search shortcuts..." autocomplete="off" />
+      <div id="command-palette-results" class="command-palette-results">
+        <!-- Results rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Zen Mode Overlay -->
+  <div id="zen-overlay" class="hidden">
+    <div id="zen-clock">00:00</div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

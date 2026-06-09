@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "AuraTab Workspace",
+  "version": "1.0.0",
+  "description": "A premium, ultra-minimalist focus dashboard designed to replace the standard browser search page.",
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "permissions": [
+    "storage"
+  ]
+}
